@@ -7,11 +7,13 @@ const privilegedOnly = (req, res, next) => {
   }
 
   const token = authHeader.split(' ')[1];
+
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    if (!['22'].includes(decoded.userCode)) {
-      return res.status(403).json({ success: false, message: 'Not authorized to edit businesses' });
+    const allowedUserCodes = ['0', '21', '22'];
+    if (!allowedUserCodes.includes(decoded.userCode)) {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
     }
 
     req.user = decoded;

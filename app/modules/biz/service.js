@@ -218,8 +218,26 @@ const findBizByName = async (bizName) => {
   return found;
 };
 
+const getRecentFeaturedBiz = async () => {
+  try {
+    const businesses = await Biz.find({
+      isArchived: false,
+      subscriptionName: { $exists: true, $ne: null }
+    })
+      .sort({ createdAt: -1 }) 
+      .limit(10)
+      .lean();
+    
+    return businesses;
+  } catch (err) {
+    console.error('❌ Error fetching featured businesses:', err);
+    throw err;
+  }
+};
+
 module.exports = {
   getCombinedBusinessResults,
   getBusinessesByLatLong,
-  findBizByName
+  findBizByName,
+  getRecentFeaturedBiz
 };

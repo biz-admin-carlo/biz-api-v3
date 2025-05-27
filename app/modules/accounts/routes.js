@@ -1,13 +1,11 @@
 const express = require('express');
-const { getAllBizForAgent, createBiz, editBiz, getAllBizForSuper } = require('./controller');
-const agentOnly = require('../../middlewares/agentMiddleware');
-const privilegedOnly = require('../../middlewares/privilegedMiddleware');
+const { getAllBiz, createBiz, editBiz } = require('./controller');
+const privilegedOnly = require('../../middlewares/privilegedOnly');
 
 const router = express.Router();
 
-router.get('/get-bizness/', agentOnly, getAllBizForAgent);
-router.get('/get-bizness/super', agentOnly, getAllBizForSuper);
-router.post('/create-biz/', agentOnly, createBiz);
-router.put('/edit-biz/', privilegedOnly, editBiz);
+// router.put('/edit-biz/', privilegedOnly, editBiz);
+router.get('/get-bizness/', privilegedOnly, getAllBiz);
+router.post('/create-biz/', privilegedOnly, createBiz);
 
 module.exports = router;

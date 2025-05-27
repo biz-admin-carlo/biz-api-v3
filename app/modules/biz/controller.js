@@ -1,4 +1,4 @@
-const { getCombinedBusinessResults, getBusinessesByLatLong, findBizByName } = require('./service');
+const { getCombinedBusinessResults, getBusinessesByLatLong, findBizByName, getRecentFeaturedBiz } = require('./service');
 
 const searchByLocation = async (req, res, next) => {
   try {
@@ -48,13 +48,19 @@ const searchByGeoCoordinates = async (req, res, next) => {
 
 const getBizByName = async (req, res, next) => {
   try {
-    const { bizName } = req.params;
+    let { bizName } = req.params;
 
     if (!bizName) {
       return res.status(400).json({ success: false, message: 'Business name is required' });
     }
 
-    const business = await findBizByName(bizName);
+    // Decode the URL and convert to title-case with symbols
+    const decoded = decodeURIComponent(bizName);
+    const humanReadableName = decoded
+      .replace(/-/g, ' ')                        // Replace dashes with spaces
+      .replace(/\b\w/g, char => char.toUpperCase()); // Capitalize first letter of each word
+
+    const business = await findBizByName(humanReadableName);
 
     if (!business) {
       return res.status(404).json({ success: false, message: 'No business found' });
@@ -66,4 +72,17 @@ const getBizByName = async (req, res, next) => {
   }
 };
 
-module.exports = { searchByLocation, searchByGeoCoordinates, getBizByName };
+const getFeaturedBiz = async (req, res, next) => {
+  try {
+    const featured = await getRecentFeaturedBiz();
+    res.status(200).json({
+      timestamp: new Date().toISOString(),
+      success: true,
+      data: featured
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { searchByLocation, searchByGeoCoordinates, getBizByName, getFeaturedBiz };

@@ -1,53 +1,115 @@
 const Biz = require('../biz/model');
+const User = require('../users/model');
 const mongoose = require('mongoose');
 const AppError = require('../../utils/AppError');
 
-const getAgentBiz = async (userId) => {
+const getAllBizByRole = async (userId, userCode) => {
   const objectId = new mongoose.Types.ObjectId(userId);
 
-  return await Biz.find({
-    isArchived: false,
-    userID: objectId
-  }).sort({ createdAt: -1 }).lean();
+  if (userCode === '0' || userCode === '21') {
+    return await Biz.find({
+      isArchived: false,
+      userID: objectId
+    }).sort({ createdAt: -1 }).lean();
+  }
+
+  if (userCode === '22') {
+    const supervisor = await User.findById(userId).lean();
+    if (!supervisor || !supervisor.referralCode) {
+      throw new AppError('Supervisor or referral code not found.', 404);
+    }
+
+    const teamMembers = await User.find({
+      referredBy: supervisor.referralCode
+    }).select('_id').lean();
+
+    const teamMemberIds = teamMembers.map(member => member._id);
+
+    return await Biz.find({
+      isArchived: false,
+      userID: { $in: teamMemberIds }
+    }).sort({ createdAt: -1 }).lean();
+  }
+
+  return [];
 };
 
-const createNewBiz = async (user, data) => {
+const createNewBiz = async (user, details) => {
   const {
     name,
     email,
     phone,
-    category,
-    location,
+    display_phone,
+    alias,
+    url,
+    category_alias,
+    category_title,
+    keywords,
+    coordinates_type,
+    coordinates_coordinates,
+    address1,
+    address2,
+    address3,
+    city,
+    zip_code,
+    country,
+    state,
     subscriptionName,
     paymentGateway,
     amountTransacted,
     customerEmail,
-    agentName
-  } = data;
+    bizStatus,
+    paymentStatus
+  } = details;
 
-  if (!name || !category || !location || !subscriptionName) {
+  if (!name || !category_title || !coordinates_coordinates || !subscriptionName) {
     throw new AppError('Missing required business fields.', 400);
   }
 
-  const biz = new Biz({
+  const geoJSONCoordinates = {
+    type: coordinates_type || 'Point',
+    coordinates: coordinates_coordinates
+  };
+
+  const newBiz = new Biz({
+    alias,
     name,
-    email,
+    is_closed: false,
+    url,
+    review_count: 0,
+    categories: [{ alias: category_alias, title: category_title }],
+    rating: 0,
+    coordinates: geoJSONCoordinates,
+    transactions: [],
+    location: {
+      address1,
+      address2,
+      address3,
+      city,
+      zip_code,
+      country,
+      state,
+      display_address: []
+    },
     phone,
-    categories: [category],
-    location,
+    display_phone,
+    email,
+    userID: user.userId,
     subscriptionName,
     paymentGateway,
-    amountTransacted,
     customerEmail,
-    agentName: agentName || `${user.firstName} ${user.lastName}`,
+    amountTransacted: amountTransacted ? parseFloat(amountTransacted) : null,
+    agentName: `${user.userFirstName} ${user.userLastName}`,
     agentId: user.userId,
-    userID: user.userId, // Owner = agent for now
+    keywords: keywords && keywords.length > 0 ? keywords : [],
+    bizStatus,
+    paymentStatus,
     isBizDB: true
   });
 
-  await biz.save();
+  await newBiz.save();
 
-  return biz;
+  return newBiz;
 };
 
 const editBizDetails = async (bizId, updates) => {
@@ -72,9 +134,8 @@ const editBizDetails = async (bizId, updates) => {
   return updated;
 };
 
-
 module.exports = {
-  getAgentBiz,
+  getAllBizByRole,
   createNewBiz,
   editBizDetails
 };

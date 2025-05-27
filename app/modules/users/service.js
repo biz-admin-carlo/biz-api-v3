@@ -1,5 +1,11 @@
 const User = require('./model');
 const AppError = require('../../utils/AppError');
+const bcrypt = require('bcryptjs');
+const Customer = require('../../webhooks/CustomerModel');
+
+const fetchUserPayments = async (email) => {
+  return await Customer.find({ 'paymentDetails.billingDetails.email': email }).sort({ createdAt: -1 }).lean();
+};
 
 const fetchAccountDetails = async (userId) => {
   const user = await User.findById(userId).select('-password');
@@ -59,6 +65,20 @@ const deactivateUserAccount = async (userId) => {
   return true;
 };
 
+const updateUserPassword = async (userId, oldPassword, newPassword) => {
+  const user = await User.findById(userId);
+  if (!user) throw new AppError('User not found', 404);
+
+  const isMatch = await bcrypt.compare(oldPassword, user.password);
+  if (!isMatch) throw new AppError('Old password is incorrect.', 401);
+
+  const hashed = await bcrypt.hash(newPassword, 10);
+  user.password = hashed;
+  await user.save();
+
+  return user;
+};
+
 const fetchAllUsers = async () => {
   return await User.find({}).select('-password').sort({ createdAt: -1 }).lean();
 };
@@ -67,11 +87,12 @@ const fetchUserById = async (userID) => {
   return await User.findById(userID).lean();
 };
 
-
 module.exports = {
   fetchAccountDetails,
   updateUserInfo,
   deactivateUserAccount,
   fetchAllUsers,
-  fetchUserById
+  fetchUserById,
+  updateUserPassword,
+  fetchUserPayments
 };

@@ -1,39 +1,15 @@
-const { getAgentBiz, createNewBiz, editBizDetails } = require('./service');
+const { getAllBizByRole, createNewBiz, editBizDetails } = require('./service');
 const AppError = require('../../utils/AppError');
 
-const getAllBizForAgent = async (req, res, next) => {
+
+const getAllBiz = async (req, res, next) => {
   try {
     const { userId, userCode } = req.user;
 
-    if (userCode !== '21') {
-      return res.status(403).json({ success: false, message: 'Unauthorized access' });
-    }
-
-    const businesses = await getAgentBiz(userId);
+    const businesses = await getAllBizByRole(userId, userCode);
 
     return res.status(200).json({
       success: true,
-      total: businesses.length,
-      data: businesses
-    });
-  } catch (err) {
-    next(err);
-  }
-};
-
-const getAllBizForSuper = async (req, res, next) => {
-  try {
-    const { userId, userCode } = req.user;
-
-    if (userCode !== '0') {
-      return res.status(403).json({ success: false, message: 'Unauthorized access' });
-    }
-
-    const businesses = await getAgentBiz(userId);
-
-    return res.status(200).json({
-      success: true,
-      timestamp: new Date().toISOString(),
       total: businesses.length,
       data: businesses
     });
@@ -76,4 +52,4 @@ const editBiz = async (req, res, next) => {
   }
 };
 
-module.exports = { getAllBizForAgent, createBiz, editBiz, getAllBizForSuper };
+module.exports = { getAllBiz, createBiz, editBiz };

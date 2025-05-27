@@ -1,5 +1,9 @@
 const User = require('../users/model');
 const Biz = require('../biz/model');
+const Customer = require('../../webhooks/CustomerModel');
+const Dispute = require('../../webhooks/DisputeModel');
+const mongoose = require('mongoose');
+
 const AppError = require('../../utils/AppError');
 
 const fetchAllUsers = async () => {
@@ -35,12 +39,20 @@ const deactivateUser = async (userId) => {
   return user;
 };
 
+const fetchAllDisputes = async () => {
+  return await Dispute.find().sort({ createdAt: -1 }).lean();
+};
+
 const fetchUserById = async (userID) => {
   return await User.findById(userID).lean();
 };
 
 const fetchAllBiz = async () => {
   return await Biz.find({}).sort({ createdAt: -1 }).lean();
+};
+
+const fetchAllPayments = async () => {
+  return await Customer.find().sort({ createdAt: -1 }).lean();
 };
 
 const fetchAllTransactions = async () => {
@@ -51,4 +63,16 @@ const fetchAllTransactions = async () => {
     .sort({ createdAt: -1 })
     .lean();
 };
-module.exports = { fetchAllUsers, updateUserCode, deactivateUser, fetchUserById, fetchAllBiz, fetchAllTransactions };
+
+const deletePaymentById = async (paymentId) => {
+  if (!mongoose.Types.ObjectId.isValid(paymentId)) {
+    throw new AppError('Invalid paymentId format', 400);
+  }
+
+  const deleted = await Customer.findByIdAndDelete(paymentId);
+  if (!deleted) throw new AppError('Payment record not found', 404);
+
+  return deleted;
+};
+
+module.exports = { fetchAllUsers, updateUserCode, deactivateUser, fetchUserById, fetchAllBiz, fetchAllTransactions, fetchAllPayments, deletePaymentById, fetchAllDisputes };

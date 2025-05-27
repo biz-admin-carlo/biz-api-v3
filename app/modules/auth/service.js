@@ -19,7 +19,8 @@ const loginUser = async ({ email, password }) => {
     userCode: user.userCode || 11,
     userFirstName: user.firstName,
     userLastName: user.lastName,
-    status: user.isActive
+    status: user.isActive,
+    email: user.email
   };
 
   const accessToken = jwt.sign(payload, process.env.JWT_SECRET); // no expiry
@@ -84,7 +85,7 @@ const handleForgotPassword = async (email) => {
 };
 
 const createUser = async (data) => {
-  const { firstName, lastName, email, password, birthday, userCode = '11' } = data;
+  const { firstName, lastName, email, password, birthday, userCode = '11', referredBy = null } = data;
 
   if (!firstName || !lastName || !email || !password || !birthday) {
     throw new AppError('Missing required fields', 400);
@@ -107,7 +108,8 @@ const createUser = async (data) => {
     password: hashedPassword,
     birthday,
     userCode,
-    referralCode
+    referralCode,
+    referredBy
   });
 
   await user.save();

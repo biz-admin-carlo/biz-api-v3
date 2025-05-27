@@ -1,9 +1,11 @@
 const express = require('express');
 const router = express.Router();
-const { searchByLocation, searchByGeoCoordinates, getBizByName } = require('./controller');
+const { generalLimiter } = require('../../middlewares/rateLimiter');
+const { searchByLocation, searchByGeoCoordinates, getBizByName, getFeaturedBiz } = require('./controller');
 
-router.get('/category/location', searchByLocation);
-router.get('/category/:latitude/:longitude', searchByGeoCoordinates);
-router.get('/:bizName', getBizByName);
+router.get('/retrieve-featured/', generalLimiter, getFeaturedBiz);
+router.get('/category/location', generalLimiter, searchByLocation);
+router.get('/category/:latitude/:longitude', generalLimiter, searchByGeoCoordinates);
+router.get('/:bizName', generalLimiter, getBizByName);
 
 module.exports = router;

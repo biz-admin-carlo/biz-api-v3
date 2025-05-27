@@ -34,6 +34,10 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  referredBy: {
+    type: String,
+    default: null 
+  },
   userCode: {
     type: String,
     enum: ['0', '11', '12', '21', '22', '31'],

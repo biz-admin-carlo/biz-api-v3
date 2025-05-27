@@ -1,4 +1,5 @@
-const { fetchAllUsers, updateUserCode, deactivateUser, fetchUserById, fetchAllBiz, fetchAllTransactions } = require('./service');
+const { fetchAllUsers, updateUserCode, deactivateUser, fetchUserById, fetchAllBiz, fetchAllTransactions, fetchAllPayments, deletePaymentById, fetchAllDisputes } = require('./service');
+const AppError = require('../../utils/AppError');
 
 const getAllUsers = async (req, res, next) => {
   try {
@@ -42,6 +43,19 @@ const deleteUserAccount = async (req, res, next) => {
   }
 };
 
+const getAllDisputes = async (req, res, next) => {
+  try {
+    const disputes = await fetchAllDisputes();
+    res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      data: disputes
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 const getUserById = async (req, res, next) => {
   try {
     const { userID } = req.params;
@@ -73,6 +87,19 @@ const getAllBiz = async (req, res, next) => {
   }
 };
 
+const getAllPayments = async (req, res, next) => {
+  try {
+    const payments = await fetchAllPayments();
+    res.status(200).json({
+      success: true,
+      timestamp: new Date().toISOString(),
+      data: payments
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 const getAllTransactions = async (req, res, next) => {
   try {
     const businesses = await fetchAllTransactions();
@@ -86,5 +113,38 @@ const getAllTransactions = async (req, res, next) => {
   }
 };
 
+const deletePayment = async (req, res, next) => {
+  try {
+    const { paymentId } = req.body;
+    if (!paymentId) throw new AppError('paymentId is required', 400);
 
-module.exports = { getAllUsers, updateAccountType, deleteUserAccount, getUserById, getAllBiz, getAllTransactions };
+    const result = await deletePaymentById(paymentId);
+    res.status(200).json({
+      success: true,
+      message: 'Payment record deleted',
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getCheckPayment = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) throw new AppError('Customer email is required', 400);
+
+    const payments = await Customer.find({ 'paymentDetails.receiptEmail': email })
+      .select('-__v')
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      data: payments
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { getAllUsers, updateAccountType, deleteUserAccount, getUserById, getAllBiz, getAllTransactions, getAllPayments, deletePayment, getAllDisputes, getCheckPayment };
